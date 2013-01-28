@@ -1,0 +1,3 @@
+login: admin
+pass: alex777
+encr. key: 6a26cbe66f9a3a9b2a4749bdc2972427
