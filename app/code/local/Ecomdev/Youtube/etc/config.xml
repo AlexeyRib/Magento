@@ -1,0 +1,123 @@
+<config>
+    <modules>
+        <Ecomdev_Youtube>
+            <version>1.0.0</version>
+        </Ecomdev_Youtube>
+    </modules>
+
+    <admin>
+        <routers>
+            <youtube>
+                <use>admin</use>
+                <args>
+                    <module>Ecomdev_Youtube</module>
+                    <frontName>youtube</frontName>
+                </args>
+            </youtube>
+        </routers>
+    </admin>
+
+    <adminhtml>
+        <menu>
+            <youtube module="youtube">
+                <title>YouTube Videos</title>
+                <sort_order>77</sort_order>
+                <children>
+                    <video module="youtube">
+                        <title>Manage Videos</title>
+                        <sort_order>0</sort_order>
+                        <action>youtube/adminhtml_video</action>
+                    </video>
+                </children>
+            </youtube>
+        </menu>
+
+        <acl>
+            <resources>
+                <all>
+                    <title>Allow Everything</title>
+                </all>
+                <admin>
+                    <children>
+                        <youtube>
+                            <title>Youtube Module</title>
+                            <sort_order>200</sort_order>
+                        </youtube>
+                    </children>
+                </admin>
+            </resources>
+        </acl>
+
+        <layout>
+            <updates>
+                <youtube>
+                    <file>youtube.xml</file>
+                </youtube>
+            </updates>
+        </layout>
+
+        <events>
+            <catalog_product_save_after>
+                <observers>
+                    <youtube_update_skus_after>
+                        <type>singleton</type>
+                        <class>youtube/observer</class>
+                        <method>productSaveAfter</method>
+                    </youtube_update_skus_after>
+                </observers>
+            </catalog_product_save_after>
+        </events>
+    </adminhtml>
+
+    <global>
+        <models>
+            <youtube>
+                <class>Ecomdev_Youtube_Model</class>
+                <resourceModel>youtube_mysql4</resourceModel>
+            </youtube>
+
+            <youtube_mysql4>
+                <class>Ecomdev_Youtube_Model_Mysql4</class>
+                <entities>
+                    <video>
+                        <table>youtube_videos</table>
+                    </video>
+                </entities>
+            </youtube_mysql4>
+        </models>
+
+        <resources>
+            <youtube_setup>
+                <setup>
+                    <module>Ecomdev_Youtube</module>
+                </setup>
+                <connection>
+                    <use>core_setup</use>
+                </connection>
+            </youtube_setup>
+            <youtube_write>
+                <connection>
+                    <use>core_write</use>
+                </connection>
+            </youtube_write>
+            <youtube_read>
+                <connection>
+                    <use>core_read</use>
+                </connection>
+            </youtube_read>
+        </resources>
+
+        <blocks>
+            <youtube>
+                <class>Ecomdev_Youtube_Block</class>
+            </youtube>
+        </blocks>
+
+        <helpers>
+            <youtube>
+                <class>Ecomdev_Youtube_Helper</class>
+            </youtube>
+        </helpers>
+    </global>
+
+</config>

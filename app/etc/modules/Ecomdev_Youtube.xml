@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <Ecomdev_Youtube>
+            <active>true</active>
+            <codePool>local</codePool>
+        </Ecomdev_Youtube>
+    </modules>
+</config>
