@@ -31,7 +31,7 @@
                 </children>
             </youtube>
         </menu>
-
+<!--
         <acl>
             <resources>
                 <all>
@@ -47,7 +47,7 @@
                 </admin>
             </resources>
         </acl>
-
+-->
         <layout>
             <updates>
                 <youtube>

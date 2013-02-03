@@ -89,7 +89,7 @@ class Ecomdev_Youtube_Adminhtml_VideoController extends Mage_Adminhtml_Controlle
                     } else {
                         $skus_to_remove = $old_skus;
                     }
-                    Mage::log($skus_to_remove, null, "skus_remove.log");
+
                     foreach($skus_to_remove as $sku)
                     {
                         $product = Mage::getModel('catalog/product')->loadByAttribute('sku', $sku);
@@ -115,7 +115,7 @@ class Ecomdev_Youtube_Adminhtml_VideoController extends Mage_Adminhtml_Controlle
                 } elseif(isset($new_skus) and !empty($new_skus)) {
                     $skus_to_add = $new_skus;
                 }
-                Mage::log($skus_to_add, null, "skus_add.log");
+
                 foreach($skus_to_add as $sku)
                 {
                     $product = Mage::getModel('catalog/product')->loadByAttribute('sku', $sku);
@@ -166,11 +166,11 @@ class Ecomdev_Youtube_Adminhtml_VideoController extends Mage_Adminhtml_Controlle
                     $attribute->save();
                 }
 
-                // adding new option to attribute for this video (if label is changed or not exist)
+                /* Adding new option to attribute for this video (if label is changed or not exist) */
                 if(!isset($option_label_old) or $option_label_old != $option_label_new) {
                     $option = array(
                         'value' => array(
-                            'video_id_' . $model->getId() => array($option_label_new), // the key for option will be id of video
+                            'video_id_' . $model->getId() => array($option_label_new), // the key for option will be id of video [ UPD: now I know, it doesn't matter :) ]
                         )
                     );
                     $attribute->setData('option', $option);
@@ -208,9 +208,8 @@ class Ecomdev_Youtube_Adminhtml_VideoController extends Mage_Adminhtml_Controlle
                 $model = Mage::getModel('youtube/video');
                 $model->load($id);
 
-                // removing option from attribute for this video
+                /* Removing option from attribute for this video */
                 $data = $model->getData();
-                //Mage::log($data, null, "delete_data.log");
                 $attribute = Mage::getModel('eav/config')->getAttribute('catalog_product', 'youtube_video');
                 $option_label = $this->getOptionLabel($data);
                 $options = $attribute->getSource()->getAllOptions();
@@ -253,19 +252,19 @@ class Ecomdev_Youtube_Adminhtml_VideoController extends Mage_Adminhtml_Controlle
             $video_code = $this->getYoutubeVideoCode($data["video_url"]);
         }
 
-        //Using cURL php extension to make the request to youtube API
+        // Using cURL php extension to make the request to youtube API
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, YT_API_URL . $video_code);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        //$feed holds a rss feed xml returned by youtube API
+        // $feed holds a rss feed xml returned by youtube API
         $feed = curl_exec($ch);
         curl_close($ch);
 
-        //Using SimpleXML to parse youtube's feed
+        // Using SimpleXML to parse youtube's feed
         $xml = simplexml_load_string($feed);
 
         $entry = $xml->entry[0];
-        //If no entry was found, then youtube didn't find any video with specified id
+        // If no entry was found, then youtube didn't find any video with specified id
         if(!$entry) {
             Mage::getSingleton('adminhtml/session')->addError('Invalid video URL or Code ("' . $video_code . '").');
             if ($error_id) {
@@ -279,15 +278,14 @@ class Ecomdev_Youtube_Adminhtml_VideoController extends Mage_Adminhtml_Controlle
         $media = $entry->children('media', true);
         $group = $media->group;
 
-        $title = $group->title; //$title: The video title
-        $desc = $group->description; //$desc: The video description
-        $thumb = $group->thumbnail[0];//There are 4 thumbnails, the first one (index 0) is the largest.
+        $title = $group->title; // $title: The video title
+        $desc = $group->description; // $desc: The video description
+        $thumb = $group->thumbnail[0];// There are 4 thumbnails, the first one (index 0) is the largest.
         list($thumb_url) = $thumb->attributes();
 
         $data["video_title"] = $title[0];
         $data["video_description"] = $desc[0];
         $data["video_thumbnail_url"] = $thumb_url;
-        //Mage::log($data, null, "save_data.log");
 
         return $data;
     }
