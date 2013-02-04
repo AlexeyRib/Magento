@@ -59,8 +59,25 @@ class Ecomdev_Youtube_Adminhtml_VideoController extends Mage_Adminhtml_Controlle
     {
         if ($data = $this->getRequest()->getPost())
         {
-            $model = Mage::getModel('youtube/video');
             $id = $this->getRequest()->getParam('id');
+
+            /* Trying to load video with this label, if it exists, and it is not current video - redirect with error */
+            $data = $this->getDataFromYoutubeApi($data);
+            $option_label_new = $this->getOptionLabel($data);
+            $data["video_option_label"] = $option_label_new;
+            $try_model = Mage::getModel('youtube/video')->load($option_label_new, "video_option_label");
+
+            if($try_model and $try_model->getId() != $id) {
+                $try_url = $this->getUrl('*/*/edit', array('id' => $try_model->getId()));
+                Mage::getSingleton('adminhtml/session')->addError('Error: This video already exists, you could find it <a href="' . $try_url . '">here</a>.');
+                if ($id) {
+                    $this->_redirect('*/*/edit', array('id' => $id));
+                } else {
+                    $this->_redirect('*/*/');
+                }
+
+                return;
+            }
 
             $new_skus = $data["products_skus"];
             if($new_skus) {
@@ -71,6 +88,7 @@ class Ecomdev_Youtube_Adminhtml_VideoController extends Mage_Adminhtml_Controlle
                 $new_skus = explode(',', $new_skus);
             }
 
+            $model = Mage::getModel('youtube/video');
             if ($id) {
                 $model->load($id);
                 $old_data = $model->getData();
@@ -103,11 +121,6 @@ class Ecomdev_Youtube_Adminhtml_VideoController extends Mage_Adminhtml_Controlle
                 }
             }
 
-            $data = $this->getDataFromYoutubeApi($data, $model->getId());
-            $option_label_new = $this->getOptionLabel($data);
-            $data["video_option_label"] = $option_label_new;
-            $model->setData($data);
-
             /* Adding attribute value to the new videos that added to list */
             if($new_skus) {
                 if(isset($old_skus) and !empty($old_skus)) {
@@ -116,7 +129,8 @@ class Ecomdev_Youtube_Adminhtml_VideoController extends Mage_Adminhtml_Controlle
                     $skus_to_add = $new_skus;
                 }
 
-                foreach($skus_to_add as $sku)
+                $invalid_skus = array();
+                foreach($skus_to_add as $key => $sku)
                 {
                     $product = Mage::getModel('catalog/product')->loadByAttribute('sku', $sku);
                     if($product) {
@@ -128,11 +142,16 @@ class Ecomdev_Youtube_Adminhtml_VideoController extends Mage_Adminhtml_Controlle
                          * So, that is why, we do not have to do it here.
                          */
                     } else {
+                        $invalid_skus[] = $sku;
+                        unset($new_skus[$key]); // removing invalid SKU from the list
                         Mage::log("Warning: There is no product with SKU '" . $sku . "' can't add it. SKUs list: '" . $data["products_skus"] . "'.", null, "Ecomdev_Youtube.log");
                     }
                 }
+                $new_skus = implode(",", $new_skus);
+                $data["products_skus"] = $new_skus; // replacing SKUs list in case we had invalid SKUs
             }
 
+            $model->setData($data);
             Mage::getSingleton('adminhtml/session')->setFormData($data);
             try {
                 if ($id) {
@@ -177,7 +196,11 @@ class Ecomdev_Youtube_Adminhtml_VideoController extends Mage_Adminhtml_Controlle
                     $attribute->save();
                 }
 
-                Mage::getSingleton('adminhtml/session')->addSuccess(Mage::helper('youtube/video')->__('Video was successfully saved.'));
+                Mage::getSingleton('adminhtml/session')->addSuccess(Mage::helper('youtube/video')->__('Video was successfully saved. %', implode(", ", $invalid_skus)));
+                if(!empty($invalid_skus)) {
+                    $msg = Mage::helper('youtube/video')->__('Warning: some of the SKU(s) that you provided were invalid and removed from the list, here it is: %s', implode(", ", $invalid_skus));
+                    Mage::getSingleton('adminhtml/session')->addWarning($msg);
+                }
                 Mage::getSingleton('adminhtml/session')->setFormData(false);
 
                 if ($this->getRequest()->getParam('back')) {
@@ -243,7 +266,7 @@ class Ecomdev_Youtube_Adminhtml_VideoController extends Mage_Adminhtml_Controlle
         $this->_redirect('*/*/');
     }
 
-    public function getDataFromYoutubeApi($data, $error_id)
+    public function getDataFromYoutubeApi($data, $error_id = null)
     {
         // The Youtube's API url
         define('YT_API_URL', 'http://gdata.youtube.com/feeds/api/videos?q=');

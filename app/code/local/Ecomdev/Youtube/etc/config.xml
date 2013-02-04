@@ -120,4 +120,14 @@
         </helpers>
     </global>
 
+    <frontend>
+        <layout>
+            <updates>
+                <youtube>
+                    <file>youtube.xml</file>
+                </youtube>
+            </updates>
+        </layout>
+    </frontend>
+
 </config>
